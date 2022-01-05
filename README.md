@@ -1,1 +1,0 @@
-# Trabalho-sd-1
