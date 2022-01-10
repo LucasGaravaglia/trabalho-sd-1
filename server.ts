@@ -40,7 +40,7 @@ io.on("connection", async (socket) => {
   socket.on("message", (data) => {
     try {
       let objDate = new Date()
-      chat.getSocket(data.emitter).emit("message", {
+      chat.getSocket(data.reciever).emit("message", {
         message: data.message,
         name: data.name,
         date: `${objDate.getDate()}-${objDate.getMonth()+1}-${objDate.getFullYear()}`,
@@ -53,10 +53,15 @@ io.on("connection", async (socket) => {
     }
   });
 
-  socket.on("online", (callback) => {
+  socket.on("online", (socket, callback) => {
     try {
       console.log(`Attempt to get online list`);
-      callback(chat.getOnlineUsers());
+      if(chat.verifyUser(socket))
+        callback(chat.getOnlineUsers(socket));
+      else{
+        console.log("Invalid Socket.")
+        callback(chat.getOnlineUsers());
+      }
     } catch (err) {
       console.log(`Error(online): ${err.message}`);
     }
@@ -65,7 +70,7 @@ io.on("connection", async (socket) => {
   socket.on("sendFile", (data) => {
     try {
       let objDate = new Date()
-      data.emitter.emit("sendFile", {
+      chat.getSocket(data.reciever).emit("sendFile", {
         file: data.file,
         name: data.name,
         date: `${objDate.getDate()}-${objDate.getMonth()+1}-${objDate.getFullYear()}`,

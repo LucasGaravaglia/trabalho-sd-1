@@ -44,6 +44,13 @@ export interface Chat {
      * @returns Socket caso encontrado.
      */
     getSocket: (socketId: string) => Socket;
+
+    /**
+     * Verifica se um usuário é um usuário válido.
+     * @param socket Socket do usuário.
+     * @returns true caso seja um usuário válido ou false caso contrário.
+     */
+     verifyUser: (socket: Socket) => boolean;
 }
 
 /**
@@ -173,6 +180,7 @@ export const Chat = (): Chat => {
         remove,
         getUser,
         getOnlineUsers,
-        getSocket
+        getSocket,
+        verifyUser
     }
 }
