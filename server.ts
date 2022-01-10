@@ -53,14 +53,15 @@ io.on("connection", async (socket) => {
     }
   });
 
-  socket.on("online", (socket, callback) => {
+  socket.on("online", (socketId, callback) => {
     try {
       console.log(`Attempt to get online list`);
-      if(chat.verifyUser(socket))
-        callback(chat.getOnlineUsers(socket));
-      else{
-        console.log("Invalid Socket.")
+      if (typeof socketId === "undefined" || socketId === null){
+        console.log("invalid socket, socket id is null");
         callback(chat.getOnlineUsers());
+      }
+      else{
+        callback(chat.getOnlineUsers(socket));
       }
     } catch (err) {
       console.log(`Error(online): ${err.message}`);
