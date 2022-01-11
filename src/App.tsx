@@ -1,176 +1,121 @@
 import "./App.css";
-import { ChakraProvider } from "@chakra-ui/react";
-import { Flex, Textarea, Button, Text, Box, Heading } from "@chakra-ui/react";
-const v = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
-function App() {
-  return (
-    <ChakraProvider>
-      <div className="App">
-        <Flex align="center" justifyContent="space-between" w="100vw" h="100vh">
-          <List title="Chats ativos" />
-          <Flex
-            flexDirection="column"
-            justifyContent="flex-end"
-            h="100%"
-            w="50%"
-            padding="10px"
-            bg="#f5f5f5"
-            borderInline="2px solid #ebebeb"
-          >
-            <Flex
-              flexDirection="column"
-              overflowY="scroll"
-              css={{
-                "&::-webkit-scrollbar": {
-                  display: "none",
-                },
-              }}
-              paddingBottom="30px"
-            >
-              <Flex maxWidth="50vw" marginBottom="20px">
-                <Avatar color="black" />
-                <Flex maxWidth="80%" flexDirection="column">
-                  <Text>Fulano</Text>
+import { useEffect, useState, useRef } from "react";
+import Socket, { Socket as SocketProps } from "socket.io-client";
+import useInterval from "./hooks/useInterval";
+import toast from "react-hot-toast";
+import { Login } from "./components/Login";
+import { Chat } from "./components/Chat";
+import { SocketClientProps } from "./types/SocketClient";
 
-                  <Flex padding="10px" bg="white">
-                    <Text>
-                      Lorem, ipsum dolor sit amet consectetur adipisicing elit.
-                      Quas, facere? Autem asperiores repellendus sapiente
-                      consequuntur ipsam molestias explicabo similique provident
-                      iure voluptates, quod mollitia sequi eaque dolores, odit
-                      blanditiis? Saepe.
-                    </Text>
-                  </Flex>
-                </Flex>
-              </Flex>
+const ENDPOINT = "http://localhost:3333";
 
-              <Flex
-                flexDirection="row-reverse"
-                maxWidth="50vw"
-                marginBottom="20px"
-              >
-                <Avatar color="black" />
-                <Flex
-                  paddingRight="5px"
-                  maxWidth="80%"
-                  flexDirection="column"
-                  alignItems="flex-end"
-                >
-                  <Text>Fulano</Text>
-
-                  <Flex padding="10px" bg="#e9eaf6">
-                    <Text>
-                      Lorem, ipsum dolor sit amet consectetur adipisicing elit.
-                      Quas, facere? Autem asperiores repellendus sapiente
-                      consequuntur ipsam molestias explicabo similique provident
-                      iure voluptates, quod mollitia sequi eaque dolores, odit
-                      blanditiis? Saepe.
-                    </Text>
-                  </Flex>
-                </Flex>
-              </Flex>
-            </Flex>
-            <Textarea
-              backgroundColor="white"
-              colorScheme="purple"
-              focusBorderColor="purple"
-            />
-            <Flex
-              padding="5px"
-              alignItems="center"
-              justifyContent="space-between"
-            >
-              <Flex alignItems="center">
-                <Avatar picSize="30px" color="purple" />
-                <Text>Levi Arcanjo</Text>
-              </Flex>
-              <Button colorScheme="purple">Enviar</Button>
-            </Flex>
-          </Flex>
-
-          <List picSize="30px" spacing="10px" title="Online agora" />
-        </Flex>
-      </div>
-    </ChakraProvider>
-  );
-}
-
-export default App;
-
-const Avatar = ({ picSize = "20px", color = "purple" }) => {
-  return (
-    <Box
-      w={picSize}
-      h={picSize}
-      mr="10px"
-      borderRadius="50%"
-      bg={color}
-      boxShadow="rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;"
-    />
-  );
-};
-
-type ListProps = {
-  spacing?: string;
-  items?: {
-    color?: string;
+export type ChatProps = {
+  messages: {
+    text: string;
+    time: number;
     name: string;
   }[];
-  picSize?: string;
-  title?: string;
-  lastMsg?: string;
+  contact: SocketClientProps;
 };
-const List = ({
-  spacing = "15px",
-  picSize = "50px",
-  title = "listTitle",
-  lastMsg,
-}: ListProps) => {
-  return (
-    <Flex
-      padding="20px"
-      flexDirection="column"
-      bg="#f5f5f5"
-      h="100%"
-      w="25%"
-      overflowY="scroll"
-      css={{
-        "&::-webkit-scrollbar": {
-          display: "none",
-        },
-      }}
-    >
-      <Heading
-        marginInline="auto"
-        color="purple.800"
-        marginBottom="10px"
-        size="md"
-      >
-        {title}
-      </Heading>
-      {v.map((i) => (
-        <Flex
-          cursor="pointer"
-          _hover={{ opacity: "0.6" }}
-          key={i}
-          marginBottom={spacing}
-          width="100%"
-          alignItems="center"
-        >
-          <Avatar
-            color={"#" + Math.floor(Math.random() * 16777215).toString(16)}
-            picSize={picSize}
-          />
-          <Flex flexDirection="column">
-            <Text color="gray.700">Levi Arcanjo</Text>
-            {lastMsg && (
-              <Text fontSize="sm" color="gray.400">
-                Ultima mensagem
-              </Text>
-            )}
-          </Flex>
-        </Flex>
-      ))}
-    </Flex>
+
+function App() {
+  const [connection, setConnection] = useState<SocketProps>();
+  const [name, setName] = useState("");
+  const [myColor, setMyColor] = useState(
+    "#" + Math.floor(Math.random() * 16777215).toString(16)
   );
-};
+  const [onlineClients, setOnlineClients] = useState<SocketClientProps[]>([]);
+  const [isConnected, setConnected] = useState(false);
+  const inputValue = useRef<HTMLInputElement>(null);
+
+  const [currentChat, setCurrentChat] = useState<ChatProps>();
+  const [chats, setChats] = useState<ChatProps[]>([]);
+
+  function selectChat(socketId: string) {
+    const current = chats.find((c) => c.contact.socketId === socketId);
+
+    if (!!current) {
+      const newChat: ChatProps = {
+        contact: onlineClients.find((c) => c.socketId === socketId) || {
+          name: "undefined",
+          socketId: "undefined",
+        },
+        messages: [],
+      };
+      chats.push(newChat);
+      setCurrentChat(newChat);
+    }
+  }
+
+  function connect() {
+    if (inputValue.current && inputValue.current.value.length > 3) {
+      toast.loading("Connectando...", {
+        duration: 1000,
+      });
+      setName(inputValue.current.value);
+      connection?.disconnect();
+      setConnection(
+        Socket(ENDPOINT, {
+          query: {
+            name: inputValue.current.value,
+          },
+        })
+      );
+    }
+  }
+
+  useEffect(() => {
+    connection?.on("connect", () => {
+      console.log("Socket connected");
+      setConnected(true);
+    });
+
+    connection?.on("disconnect", () => {
+      console.log("Socket disconnected");
+    });
+  }, [connection]);
+
+  useInterval(
+    () =>
+      connection?.emit(
+        "online",
+        { socketId: connection.id },
+        (data: SocketClientProps[]) => {
+          if (data.length > 0) {
+            const newClients = data.map((i) => {
+              const exists = onlineClients.find(
+                (j) => j.socketId === i.socketId
+              );
+
+              if (!!exists) {
+                return exists;
+              }
+
+              return {
+                color: "#" + Math.floor(Math.random() * 16777215).toString(16),
+                name: i.name,
+                socketId: i.socketId,
+              };
+            });
+
+            setOnlineClients(newClients);
+          }
+        }
+      ),
+    3000
+  );
+
+  if (!isConnected) {
+    return <Login connect={connect} inputRef={inputValue} />;
+  }
+
+  return (
+    <Chat
+      myColor={myColor}
+      selectChat={selectChat}
+      name={name}
+      onlineClients={onlineClients}
+    />
+  );
+}
+export default App;
