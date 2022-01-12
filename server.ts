@@ -50,7 +50,7 @@ io.on("connection", async (socket) => {
   socket.on("message", (data) => {
     try {
       let objDate = new Date();
-      chat.getSocket(data.receiver).emit("message", {
+      chat.getSocket(data.receiverId).emit("message", {
         message: data.message,
         senderName: chat.getUserName(socket.id),
         senderSocketId: socket.id,
@@ -78,7 +78,7 @@ io.on("connection", async (socket) => {
   socket.on("sendFile", (data) => {
     try {
       let objDate = new Date();
-      chat.getSocket(data.receiver).emit("sendFile", {
+      chat.getSocket(data.receiverId).emit("sendFile", {
         file: data.file,
         senderName: chat.getUserName(socket.id),
         date: `${objDate.getDate()}-${
