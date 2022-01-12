@@ -52,7 +52,7 @@ io.on("connection", async (socket) => {
       let objDate = new Date();
       chat.getSocket(data.receiverId).emit("message", {
         message: data.message,
-        senderName: chat.getUserName(socket.id),
+        senderName: chat.getUserName(socket.id).name,
         senderSocketId: socket.id,
         date: `${objDate.getDate()}-${
           objDate.getMonth() + 1
