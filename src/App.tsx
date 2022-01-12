@@ -31,10 +31,19 @@ function App() {
   const [currentChat, setCurrentChat] = useState<ChatProps>();
   const [chats, setChats] = useState<ChatProps[]>([]);
 
+  function sendMsg(socketId: string, msg: string) {
+    connection?.emit("message", {
+      receiver: socketId,
+      message: msg,
+      senderName: name,
+      senderSocketId: connection.id,
+    });
+  }
+
   function selectChat(socketId: string) {
     const current = chats.find((c) => c.contact.socketId === socketId);
 
-    if (!!current) {
+    if (typeof current === "undefined") {
       const newChat: ChatProps = {
         contact: onlineClients.find((c) => c.socketId === socketId) || {
           name: "undefined",
@@ -44,6 +53,10 @@ function App() {
       };
       chats.push(newChat);
       setCurrentChat(newChat);
+      console.log(currentChat);
+    } else {
+      console.log("Chat existente");
+      setCurrentChat(current);
     }
   }
 
@@ -64,6 +77,41 @@ function App() {
     }
   }
 
+  function onReceiveMsg(
+    senderSocketId: string,
+    senderName: string,
+    receivedMsg: string
+  ) {
+    console.log("oline clients");
+    console.log(onlineClients);
+    const current = chats.find((c) => c.contact.socketId === senderSocketId);
+
+    if (typeof current === "undefined") {
+      const newChat: ChatProps = {
+        contact: onlineClients.find((c) => c.socketId == senderSocketId) || {
+          name: "undefined",
+          socketId: "undefined",
+        },
+        messages: [
+          {
+            name: senderName,
+            text: receivedMsg,
+            time: Date.now(),
+          },
+        ],
+      };
+      if (newChat.contact.name !== "undefined") {
+        chats.push(newChat);
+      }
+    } else {
+      current.messages.push({
+        name: senderName,
+        text: receivedMsg,
+        time: Date.now(),
+      });
+    }
+  }
+
   useEffect(() => {
     connection?.on("connect", () => {
       console.log("Socket connected");
@@ -73,7 +121,11 @@ function App() {
     connection?.on("disconnect", () => {
       console.log("Socket disconnected");
     });
-  }, [connection]);
+
+    connection?.on("message", (data) => {
+      onReceiveMsg(data.senderSocketId, data.name, data.message);
+    });
+  }, [connection, onlineClients]);
 
   useInterval(
     () =>
@@ -115,6 +167,9 @@ function App() {
       selectChat={selectChat}
       name={name}
       onlineClients={onlineClients}
+      currentChat={currentChat}
+      sendMsgToServer={sendMsg}
+      activeChats={chats.filter((c) => c.messages.length > 0)}
     />
   );
 }

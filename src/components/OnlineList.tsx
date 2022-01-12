@@ -1,10 +1,12 @@
 import { Flex, Heading, Text } from "@chakra-ui/react";
 import { SocketClientProps } from "../types/SocketClient";
 import { Avatar } from "./Avatar";
+import { ChatProps } from "../App";
 
 export type ListProps = {
   spacing?: string;
-  items?: Array<SocketClientProps>;
+  contacts?: Array<SocketClientProps>;
+  chats?: Array<ChatProps>;
   picSize?: string;
   title?: string;
   lastMsg?: string;
@@ -15,8 +17,9 @@ export const List = ({
   picSize = "50px",
   title = "listTitle",
   lastMsg,
-  items,
+  contacts,
   onClickItem,
+  chats,
 }: ListProps) => {
   return (
     <Flex
@@ -40,8 +43,8 @@ export const List = ({
       >
         {title}
       </Heading>
-      {items &&
-        items.map((i) => (
+      {contacts &&
+        contacts.map((i) => (
           <Flex
             cursor="pointer"
             _hover={{ opacity: "0.6" }}
@@ -57,6 +60,29 @@ export const List = ({
               {lastMsg && (
                 <Text fontSize="sm" color="gray.400">
                   Ultima mensagem
+                </Text>
+              )}
+            </Flex>
+          </Flex>
+        ))}
+      {chats &&
+        chats.map((i) => (
+          <Flex
+            cursor="pointer"
+            _hover={{ opacity: "0.6" }}
+            key={i.contact.socketId}
+            marginBottom={spacing}
+            width="100%"
+            alignItems="center"
+            onClick={() => onClickItem(i.contact.socketId)}
+          >
+            <Avatar color={i.contact.color || "back"} picSize={picSize} />
+            <Flex flexDirection="column">
+              <Text color="gray.700">{i.contact.name}</Text>
+              {i.messages.length > 0 && (
+                <Text fontSize="sm" color="gray.400">
+                  {i.messages[i.messages.length - 1].name}:{" "}
+                  {i.messages[i.messages.length - 1].text}
                 </Text>
               )}
             </Flex>
