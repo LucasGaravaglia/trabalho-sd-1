@@ -83,9 +83,9 @@ io.on("connection", async (socket) => {
   socket.on("sendFile", (data) => {
     try {
       let objDate = new Date();
-      chat.getSocket(data.receiverId).emit("sendFile", {
+      chat.getSocket(data.receiver).emit("sendFile", {
         file: data.file,
-        senderName: data.name,
+        senderName: chat.getUserName(socket.id),
         date: `${objDate.getDate()}-${
           objDate.getMonth() + 1
         }-${objDate.getFullYear()}`,
@@ -104,7 +104,7 @@ io.on("connection", async (socket) => {
       chat.getOnlineUsers().forEach((user) => {
         chat.getSocket(user.socketId).emit("message", {
           message: data.message,
-          name: data.name,
+          name: chat.getUserName(socket.id),
           date: `${objDate.getDate()}-${
             objDate.getMonth() + 1
           }-${objDate.getFullYear()}`,
