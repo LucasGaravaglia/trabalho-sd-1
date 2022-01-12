@@ -1,5 +1,5 @@
 import "./App.css";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Socket, { Socket as SocketProps } from "socket.io-client";
 import useInterval from "./hooks/useInterval";
 import toast from "react-hot-toast";
@@ -14,6 +14,7 @@ export type ChatProps = {
     text: string;
     time: number;
     name: string;
+    msgId: string;
   }[];
   contact: SocketClientProps;
 };
@@ -40,25 +41,28 @@ function App() {
     });
   }
 
-  function selectChat(socketId: string) {
-    const current = chats.find((c) => c.contact.socketId === socketId);
+  const selectChat = useCallback(
+    (socketId: string) => {
+      const current = chats.find((c) => c.contact.socketId === socketId);
 
-    if (typeof current === "undefined") {
-      const newChat: ChatProps = {
-        contact: onlineClients.find((c) => c.socketId === socketId) || {
-          name: "undefined",
-          socketId: "undefined",
-        },
-        messages: [],
-      };
-      chats.push(newChat);
-      setCurrentChat(newChat);
-      console.log(currentChat);
-    } else {
-      console.log("Chat existente");
-      setCurrentChat(current);
-    }
-  }
+      if (typeof current === "undefined") {
+        const newChat: ChatProps = {
+          contact: onlineClients.find((c) => c.socketId === socketId) || {
+            name: "undefined",
+            socketId: "undefined",
+          },
+          messages: [],
+        };
+        chats.push(newChat);
+        setCurrentChat(newChat);
+        console.log(currentChat);
+      } else {
+        console.log("Chat existente");
+        setCurrentChat(current);
+      }
+    },
+    [onlineClients, chats, currentChat]
+  );
 
   function connect() {
     if (inputValue.current && inputValue.current.value.length > 3) {
@@ -77,40 +81,40 @@ function App() {
     }
   }
 
-  function onReceiveMsg(
-    senderSocketId: string,
-    senderName: string,
-    receivedMsg: string
-  ) {
-    console.log("oline clients");
-    console.log(onlineClients);
-    const current = chats.find((c) => c.contact.socketId === senderSocketId);
+  const onReceiveMsg = useCallback(
+    (senderSocketId: string, senderName: string, receivedMsg: string) => {
+      console.log(onlineClients);
+      const current = chats.find((c) => c.contact.socketId === senderSocketId);
 
-    if (typeof current === "undefined") {
-      const newChat: ChatProps = {
-        contact: onlineClients.find((c) => c.socketId == senderSocketId) || {
-          name: "undefined",
-          socketId: "undefined",
-        },
-        messages: [
-          {
-            name: senderName,
-            text: receivedMsg,
-            time: Date.now(),
+      if (typeof current === "undefined") {
+        const newChat: ChatProps = {
+          contact: onlineClients.find((c) => c.socketId == senderSocketId) || {
+            name: "undefined",
+            socketId: "undefined",
           },
-        ],
-      };
-      if (newChat.contact.name !== "undefined") {
-        chats.push(newChat);
+          messages: [
+            {
+              name: senderName,
+              text: receivedMsg,
+              time: Date.now(),
+              msgId: "0",
+            },
+          ],
+        };
+        if (newChat.contact.name !== "undefined") {
+          chats.push(newChat);
+        }
+      } else {
+        current.messages.push({
+          name: senderName,
+          text: receivedMsg,
+          time: Date.now(),
+          msgId: (current.messages.length + 1).toString(),
+        });
       }
-    } else {
-      current.messages.push({
-        name: senderName,
-        text: receivedMsg,
-        time: Date.now(),
-      });
-    }
-  }
+    },
+    [onlineClients, chats]
+  );
 
   useEffect(() => {
     connection?.on("connect", () => {
@@ -125,7 +129,7 @@ function App() {
     connection?.on("message", (data) => {
       onReceiveMsg(data.senderSocketId, data.name, data.message);
     });
-  }, [connection, onlineClients]);
+  }, [connection]);
 
   useInterval(
     () =>

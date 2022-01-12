@@ -34,6 +34,7 @@ export const Chat = ({
         name: name,
         text: msg,
         time: Date.now(),
+        msgId: (currentChat.messages.length + 1).toString(),
       });
       setMsg("");
     }
@@ -78,7 +79,7 @@ export const Chat = ({
                   currentChat.messages.map((i) => {
                     return i.name === name ? (
                       <Flex
-                        key={Date.now() + i.time}
+                        key={i.time.toString() + i.name}
                         flexDirection="row-reverse"
                         maxWidth="50vw"
                         marginBottom="20px"
@@ -102,7 +103,7 @@ export const Chat = ({
                       </Flex>
                     ) : (
                       <Flex
-                        key={Date.now() + i.time}
+                        key={i.time.toString() + i.name}
                         maxWidth="50vw"
                         marginBottom="20px"
                       >
