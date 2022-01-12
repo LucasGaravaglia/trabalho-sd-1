@@ -34,135 +34,133 @@ function App() {
 
   function sendMsg(socketId: string, msg: string) {
     connection?.emit("message", {
-      receiver: socketId,
+      receiverId: socketId,
       message: msg,
-      senderName: name,
-      senderSocketId: connection.id,
     });
   }
 
-  const selectChat = useCallback(
-    (socketId: string) => {
-      const current = chats.find((c) => c.contact.socketId === socketId);
-
-      if (typeof current === "undefined") {
-        const newChat: ChatProps = {
-          contact: onlineClients.find((c) => c.socketId === socketId) || {
-            name: "undefined",
-            socketId: "undefined",
-          },
-          messages: [],
-        };
-        chats.push(newChat);
-        setCurrentChat(newChat);
-        console.log(currentChat);
-      } else {
-        console.log("Chat existente");
-        setCurrentChat(current);
-      }
-    },
-    [onlineClients, chats, currentChat]
-  );
-
-  function connect() {
-    if (inputValue.current && inputValue.current.value.length > 3) {
-      toast.loading("Connectando...", {
-        duration: 1000,
-      });
-      setName(inputValue.current.value);
-      connection?.disconnect();
-      setConnection(
-        Socket(ENDPOINT, {
-          query: {
-            name: inputValue.current.value,
-          },
-        })
+  function register() {
+    toast.loading("Verficando nome...", {
+      duration: 1000,
+    });
+    if (inputValue.current && inputValue.current.value.length > 3)
+      connection?.emit(
+        "register",
+        {
+          name: inputValue.current.value,
+        },
+        (data: boolean) => {
+          if (data === false && inputValue.current) {
+            setName(inputValue.current.value);
+          } else {
+            toast.error("Erro!! Nome já existente");
+          }
+        }
       );
+  }
+
+  function selectChat(socketId: string) {
+    const current = chats.find((c) => c.contact.socketId === socketId);
+
+    if (typeof current === "undefined") {
+      const newChat: ChatProps = {
+        contact: onlineClients.find((c) => c.socketId === socketId) || {
+          name: "undefined",
+          socketId: "undefined",
+        },
+        messages: [],
+      };
+      chats.push(newChat);
+      setCurrentChat(newChat);
+      console.log(currentChat);
+    } else {
+      console.log("Chat existente");
+      setCurrentChat(current);
     }
   }
 
-  const onReceiveMsg = useCallback(
-    (senderSocketId: string, senderName: string, receivedMsg: string) => {
-      console.log(onlineClients);
-      const current = chats.find((c) => c.contact.socketId === senderSocketId);
+  function onReceiveMsg(
+    senderSocketId: string,
+    senderName: string,
+    receivedMsg: string
+  ) {
+    console.log(onlineClients);
+    const current = chats.find((c) => c.contact.socketId === senderSocketId);
 
-      if (typeof current === "undefined") {
-        const newChat: ChatProps = {
-          contact: onlineClients.find((c) => c.socketId == senderSocketId) || {
-            name: "undefined",
-            socketId: "undefined",
+    if (typeof current === "undefined") {
+      const newChat: ChatProps = {
+        contact: onlineClients.find((c) => c.socketId == senderSocketId) || {
+          name: "undefined",
+          socketId: "undefined",
+        },
+        messages: [
+          {
+            name: senderName,
+            text: receivedMsg,
+            time: Date.now(),
+            msgId: "0",
           },
-          messages: [
-            {
-              name: senderName,
-              text: receivedMsg,
-              time: Date.now(),
-              msgId: "0",
-            },
-          ],
-        };
-        if (newChat.contact.name !== "undefined") {
-          chats.push(newChat);
-        }
-      } else {
-        current.messages.push({
-          name: senderName,
-          text: receivedMsg,
-          time: Date.now(),
-          msgId: (current.messages.length + 1).toString(),
-        });
+        ],
+      };
+      if (newChat.contact.name !== "undefined") {
+        chats.push(newChat);
       }
-    },
-    [onlineClients, chats]
-  );
+    } else {
+      current.messages.push({
+        name: senderName,
+        text: receivedMsg,
+        time: Date.now(),
+        msgId: (current.messages.length + 1).toString(),
+      });
+    }
+  }
 
   useEffect(() => {
-    connection?.on("connect", () => {
+    const socketConnection = Socket(ENDPOINT);
+
+    socketConnection.on("connect", () => {
       console.log("Socket connected");
       setConnected(true);
     });
 
-    connection?.on("disconnect", () => {
+    socketConnection.on("disconnect", () => {
       console.log("Socket disconnected");
     });
 
-    connection?.on("message", (data) => {
-      onReceiveMsg(data.senderSocketId, data.name, data.message);
+    socketConnection.on("message", (data) => {
+      //onReceiveMsg(data.senderSocketId, data.name, data.message);
+      console.log(data);
     });
-  }, [connection]);
 
-  useInterval(
-    () =>
-      connection?.emit(
-        "online",
-        { socketId: connection.id },
-        (data: SocketClientProps[]) => {
-          if (data.length > 0) {
-            const newClients = data.map((i) => {
-              const exists = onlineClients.find(
-                (j) => j.socketId === i.socketId
-              );
+    setConnection(socketConnection);
+  }, []);
 
-              if (!!exists) {
-                return exists;
-              }
+  useInterval(() => {
+    if (name !== "") {
+      connection?.emit("online", (data: SocketClientProps[]) => {
+        if (data.length > 0) {
+          const newClients = data.map((i) => {
+            const exists = onlineClients.find((j) => j.socketId === i.socketId);
 
-              return {
-                color: "#" + Math.floor(Math.random() * 16777215).toString(16),
-                name: i.name,
-                socketId: i.socketId,
-              };
-            });
+            if (!!exists) {
+              return exists;
+            }
 
-            setOnlineClients(newClients);
-          }
+            return {
+              color: "#" + Math.floor(Math.random() * 16777215).toString(16),
+              name: i.name,
+              socketId: i.socketId,
+            };
+          });
+
+          setOnlineClients(newClients);
         }
-      ),
-    3000
-  );
+      });
+    }
+  }, 3000);
 
-  if (!isConnected) {
-    return <Login connect={connect} inputRef={inputValue} />;
+  if (name === "") {
+    return <Login connect={register} inputRef={inputValue} />;
   }
 
   return (
