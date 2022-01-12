@@ -125,6 +125,7 @@ function App() {
 
     socketConnection.on("disconnect", () => {
       console.log("Socket disconnected");
+      setName("");
     });
 
     socketConnection.on("message", (data) => {
