@@ -24,20 +24,23 @@ io.on("connection", async (socket) => {
   console.log(
     `New connection: ${socket.id}. This connection is not registered yet.`
   );
-  try {
-    if (typeof socket.handshake.query.name === "undefined")
-      throw new Error("invalid query.name");
-    let connections = chat.getOnlineUsers();
-    chat.insert(socket.handshake.query.name, socket);
-    connections.forEach((user) => {
-      chat.getSocket(user.socketId).emit("newConnection", {
-        name: socket.handshake.query.name,
-        id: socket.id,
+
+  socket.on("register", (data) => {
+    try {
+      if (typeof data.name === "undefined")
+        throw new Error("invalid data.name");
+      let connections = chat.getOnlineUsers();
+      chat.insert(data.name, socket);
+      connections.forEach((user) => {
+        chat.getSocket(user.socketId).emit("newConnection", {
+          name: data.name,
+          id: socket.id,
+        });
       });
-    });
-  } catch (err) {
-    console.log(`Error(register - New Connection): ${err.message}`);
-  }
+    } catch (err) {
+      console.log(`Error(register - New Connection): ${err.message}`);
+    }
+  })
 
   socket.on("message", (data) => {
     try {
