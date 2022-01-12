@@ -57,7 +57,7 @@ export interface Chat {
    * @param socketId Identificador do socket.
    * @returns Nome do usuário.
    */
-  getUserName: (socketId: string) => User;
+  getUserName: (socketId: string) => string;
 }
 
 /**
@@ -194,10 +194,8 @@ export const Chat = (): Chat => {
    * @param socketId Identificador do socket.
    * @returns Nome do usuário.
    */
-  const getUserName = (socketId: string): User => {
-    return users.find((c) => {
-      c.socket.id == socketId;
-    });
+  const getUserName = (socketId: string): string => {
+    return users.find((c) => c.socket.id == socketId).name;
   };
 
   return {
