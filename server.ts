@@ -45,6 +45,7 @@ io.on("connection", async (socket) => {
       chat.getSocket(data.receiver).emit("message", {
         message: data.message,
         name: data.senderName,
+        senderSocketId: data.senderSocketId,
         date: `${objDate.getDate()}-${
           objDate.getMonth() + 1
         }-${objDate.getFullYear()}`,
