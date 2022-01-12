@@ -25,11 +25,15 @@ io.on("connection", async (socket) => {
     `New connection: ${socket.id}. This connection is not registered yet.`
   );
 
-  socket.on("register", (data) => {
+  socket.on("register", (data, callback) => {
     try {
       if (typeof data.name === "undefined")
         throw new Error("invalid data.name");
       let connections = chat.getOnlineUsers();
+      if (!!connections.find((c) => c.name == data.name)) {
+        callback(true);
+        throw new Error("already registered user.name");
+      }
       chat.insert(data.name, socket);
       connections.forEach((user) => {
         chat.getSocket(user.socketId).emit("newConnection", {
@@ -37,18 +41,19 @@ io.on("connection", async (socket) => {
           id: socket.id,
         });
       });
+      callback(false);
     } catch (err) {
       console.log(`Error(register - New Connection): ${err.message}`);
     }
-  })
+  });
 
   socket.on("message", (data) => {
     try {
       let objDate = new Date();
       chat.getSocket(data.receiver).emit("message", {
         message: data.message,
-        name: data.senderName,
-        senderSocketId: data.senderSocketId,
+        senderName: chat.getUserName(socket.id),
+        senderSocketId: socket.id,
         date: `${objDate.getDate()}-${
           objDate.getMonth() + 1
         }-${objDate.getFullYear()}`,
@@ -61,10 +66,10 @@ io.on("connection", async (socket) => {
     }
   });
 
-  socket.on("online", (socketId, callback) => {
+  socket.on("online", (callback) => {
     try {
       console.log(`Attempt to get online list`);
-      if (typeof socketId === "undefined" || socketId === null) {
+      if (typeof socket === "undefined" || socket.id === null) {
         console.log("invalid socket, socket id is null");
         callback(chat.getOnlineUsers());
       } else {
@@ -78,9 +83,9 @@ io.on("connection", async (socket) => {
   socket.on("sendFile", (data) => {
     try {
       let objDate = new Date();
-      chat.getSocket(data.reciever).emit("sendFile", {
+      chat.getSocket(data.receiverId).emit("sendFile", {
         file: data.file,
-        name: data.name,
+        senderName: data.name,
         date: `${objDate.getDate()}-${
           objDate.getMonth() + 1
         }-${objDate.getFullYear()}`,
