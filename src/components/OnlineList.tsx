@@ -6,7 +6,7 @@ import { ChatProps } from "../App";
 export type ListProps = {
   spacing?: string;
   contacts?: Array<SocketClientProps>;
-  chats?: Array<ChatProps>;
+  chats?: Array<SocketClientProps>;
   picSize?: string;
   title?: string;
   lastMsg?: string;
@@ -66,28 +66,31 @@ export const List = ({
           </Flex>
         ))}
       {chats &&
-        chats.map((i) => (
-          <Flex
-            cursor="pointer"
-            _hover={{ opacity: "0.6" }}
-            key={i.contact.socketId}
-            marginBottom={spacing}
-            width="100%"
-            alignItems="center"
-            onClick={() => onClickItem(i.contact.socketId)}
-          >
-            <Avatar color={i.contact.color || "back"} picSize={picSize} />
-            <Flex flexDirection="column">
-              <Text color="gray.700">{i.contact.name}</Text>
-              {i.messages.length > 0 && (
-                <Text fontSize="sm" color="gray.400">
-                  {i.messages[i.messages.length - 1].name}:{" "}
-                  {i.messages[i.messages.length - 1].text}
-                </Text>
-              )}
-            </Flex>
-          </Flex>
-        ))}
+        chats.map(
+          (i) =>
+            i.chat && (
+              <Flex
+                cursor="pointer"
+                _hover={{ opacity: "0.6" }}
+                key={i.socketId}
+                marginBottom={spacing}
+                width="100%"
+                alignItems="center"
+                onClick={() => onClickItem(i.socketId)}
+              >
+                <Avatar color={i.color || "back"} picSize={picSize} />
+                <Flex flexDirection="column">
+                  <Text color="gray.700">{i.name}</Text>
+                  {i.chat.messages.length > 0 && (
+                    <Text fontSize="sm" color="gray.400">
+                      {i.chat.messages[i.chat.messages.length - 1].name}:
+                      {i.chat.messages[i.chat.messages.length - 1].text}
+                    </Text>
+                  )}
+                </Flex>
+              </Flex>
+            )
+        )}
     </Flex>
   );
 };

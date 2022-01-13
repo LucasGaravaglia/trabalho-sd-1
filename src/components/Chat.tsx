@@ -10,9 +10,9 @@ export type ChatComponentProps = {
   name?: string;
   selectChat: (socketId: string) => void;
   myColor?: string;
-  currentChat?: ChatProps;
+  currentChat?: SocketClientProps;
   sendMsgToServer: (socketId: string, msg: string) => void;
-  activeChats?: ChatProps[];
+  activeChats?: SocketClientProps[];
 };
 
 export const Chat = ({
@@ -27,16 +27,25 @@ export const Chat = ({
   const [msg, setMsg] = useState("");
 
   function sendMsg() {
-    if (msg.length > 0 && currentChat) {
-      sendMsgToServer(currentChat?.contact.socketId, msg);
-      console.log("new msg sent", msg);
-      currentChat?.messages.push({
+    if (msg.length > 0 && currentChat && currentChat.chat) {
+      sendMsgToServer(currentChat?.socketId, msg);
+      console.log("new msg sent:", msg);
+      currentChat.chat.messages.push({
         name: name,
         text: msg,
         time: Date.now(),
-        msgId: (currentChat.messages.length + 1).toString(),
+        msgId: (currentChat.chat.messages.length + 1).toString(),
       });
       setMsg("");
+
+      if (activeChats) {
+        const isActive = activeChats.find(
+          (i) => i.socketId === currentChat.socketId
+        );
+        if (!isActive) {
+          activeChats.push(currentChat);
+        }
+      }
     }
   }
 
@@ -60,9 +69,12 @@ export const Chat = ({
         >
           {currentChat && (
             <>
-              <Flex alignItems="center">
-                <Avatar picSize="30px" color={currentChat?.contact.color} />
-                <Text>{currentChat?.contact.name}</Text>
+              <Flex alignItems="center" justifyContent="space-between">
+                <Flex alignItems="center">
+                  <Avatar picSize="30px" color={currentChat?.color} />
+                  <Text>{currentChat?.name}</Text>
+                </Flex>
+                <Text>{currentChat.online ? "Online" : "offline"}</Text>
               </Flex>
               <Flex
                 flexDirection="column"
@@ -75,8 +87,8 @@ export const Chat = ({
                 h="100%"
                 paddingY="30px"
               >
-                {currentChat &&
-                  currentChat.messages.map((i) => {
+                {currentChat.chat &&
+                  currentChat.chat.messages.map((i) => {
                     return i.name === name ? (
                       <Flex
                         key={i.time.toString() + i.name}
@@ -107,7 +119,7 @@ export const Chat = ({
                         maxWidth="50vw"
                         marginBottom="20px"
                       >
-                        <Avatar color={currentChat.contact.color} />
+                        <Avatar color={currentChat.color} />
                         <Flex maxWidth="80%" flexDirection="column">
                           <Text>{i.name}</Text>
 

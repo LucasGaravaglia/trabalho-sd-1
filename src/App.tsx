@@ -1,6 +1,6 @@
 import "./App.css";
 import { useEffect, useState, useRef, useCallback } from "react";
-import Socket, { Socket as SocketProps } from "socket.io-client";
+import Socket from "socket.io-client";
 import useInterval from "./hooks/useInterval";
 import toast from "react-hot-toast";
 import { Login } from "./components/Login";
@@ -8,6 +8,7 @@ import { Chat } from "./components/Chat";
 import { SocketClientProps } from "./types/SocketClient";
 
 const ENDPOINT = "http://localhost:3333";
+const socketConnection = Socket(ENDPOINT);
 
 export type ChatProps = {
   messages: {
@@ -16,21 +17,23 @@ export type ChatProps = {
     name: string;
     msgId: string;
   }[];
-  contact: SocketClientProps;
 };
 
 function App() {
-  const [connection, setConnection] = useState<SocketProps>();
+  const [connection] = useState(socketConnection);
   const [name, setName] = useState("");
-  const [myColor, setMyColor] = useState(
-    "#" + Math.floor(Math.random() * 16777215).toString(16)
+  const [myColor] = useState(
+    "#" +
+      Math.floor(
+        Math.random() * (Math.random() * (19999999 - 10000000) + 10000000)
+      ).toString(16)
   );
   const [onlineClients, setOnlineClients] = useState<SocketClientProps[]>([]);
-  const [isConnected, setConnected] = useState(false);
-  const inputValue = useRef<HTMLInputElement>(null);
+  const [clients] = useState<SocketClientProps[]>([]);
 
-  const [currentChat, setCurrentChat] = useState<ChatProps>();
-  const [chats, setChats] = useState<ChatProps[]>([]);
+  const [currentChat, setCurrentChat] = useState<SocketClientProps>();
+  const [activeChatsUsers] = useState<SocketClientProps[]>([]);
+  const inputValue = useRef<HTMLInputElement>(null);
 
   function sendMsg(socketId: string, msg: string) {
     connection?.emit("message", {
@@ -60,101 +63,86 @@ function App() {
   }
 
   function selectChat(socketId: string) {
-    const current = chats.find((c) => c.contact.socketId === socketId);
+    const user = clients.find((c) => c.socketId === socketId);
 
-    if (typeof current === "undefined") {
-      const newChat: ChatProps = {
-        contact: onlineClients.find((c) => c.socketId === socketId) || {
-          name: "undefined",
-          socketId: "undefined",
-        },
-        messages: [],
-      };
-      chats.push(newChat);
-      setCurrentChat(newChat);
-      console.log(currentChat);
+    if (typeof user !== "undefined") {
+      setCurrentChat(user);
     } else {
-      console.log("Chat existente");
-      setCurrentChat(current);
+      console.log("Error in chat selection");
     }
   }
 
-  function onReceiveMsg(
-    senderSocketId: string,
-    senderName: string,
-    receivedMsg: string
-  ) {
-    console.log(onlineClients);
-    const current = chats.find((c) => c.contact.socketId === senderSocketId);
+  const onReceiveMsg = useCallback(
+    (senderSocketId: string, senderName: string, receivedMsg: string) => {
+      // console.log(clients);
 
-    if (typeof current === "undefined") {
-      const newChat: ChatProps = {
-        contact: onlineClients.find((c) => c.socketId == senderSocketId) || {
-          name: "undefined",
-          socketId: "undefined",
-        },
-        messages: [
-          {
-            name: senderName,
-            text: receivedMsg,
-            time: Date.now(),
-            msgId: "0",
-          },
-        ],
-      };
-      if (newChat.contact.name !== "undefined") {
-        chats.push(newChat);
+      const current = clients.find((c) => c.socketId === senderSocketId);
+
+      if (typeof current !== "undefined") {
+        current.chat?.messages.push({
+          name: senderName,
+          text: receivedMsg,
+          time: Date.now(),
+          msgId: (current.chat.messages.length + 1).toString(),
+        });
+        const isActive = activeChatsUsers.find(
+          (i) => i.socketId === current?.socketId
+        );
+        if (!isActive) {
+          activeChatsUsers.push(current);
+        }
       }
-    } else {
-      current.messages.push({
-        name: senderName,
-        text: receivedMsg,
-        time: Date.now(),
-        msgId: (current.messages.length + 1).toString(),
-      });
-    }
-  }
+    },
+    []
+  );
 
   useEffect(() => {
-    const socketConnection = Socket(ENDPOINT);
-
-    socketConnection.on("connect", () => {
+    connection.on("connect", () => {
       console.log("Socket connected");
-      setConnected(true);
     });
 
-    socketConnection.on("disconnect", () => {
+    connection.on("disconnect", () => {
       console.log("Socket disconnected");
       setName("");
     });
 
-    socketConnection.on("message", (data) => {
-      //onReceiveMsg(data.senderSocketId, data.name, data.message);
-      console.log(data);
+    connection.on("message", (data) => {
+      onReceiveMsg(data.senderSocketId, data.senderName, data.message);
     });
-
-    setConnection(socketConnection);
   }, []);
 
   useInterval(() => {
     if (name !== "") {
       connection?.emit("online", (data: SocketClientProps[]) => {
         if (data.length > 0) {
-          const newClients = data.map((i) => {
-            const exists = onlineClients.find((j) => j.socketId === i.socketId);
+          clients.forEach((i) => (i.online = false));
+          //console.log(clients);
+
+          data.forEach((i) => {
+            const exists = clients.find((j) => j.socketId === i.socketId);
 
             if (!!exists) {
-              return exists;
+              exists.online = true;
+            } else {
+              clients.push({
+                color:
+                  "#" +
+                  Math.floor(
+                    Math.random() *
+                      (Math.random() * (19999999 - 10000000) + 10000000)
+                  ).toString(16),
+                name: i.name,
+                socketId: i.socketId,
+                online: true,
+                chat: {
+                  messages: [],
+                },
+              });
             }
-
-            return {
-              color: "#" + Math.floor(Math.random() * 16777215).toString(16),
-              name: i.name,
-              socketId: i.socketId,
-            };
           });
 
-          setOnlineClients(newClients);
+          const newOnlineList = clients.filter((c) => c.online);
+          setOnlineClients(newOnlineList);
         }
       });
     }
@@ -172,7 +160,7 @@ function App() {
       onlineClients={onlineClients}
       currentChat={currentChat}
       sendMsgToServer={sendMsg}
-      activeChats={chats.filter((c) => c.messages.length > 0)}
+      activeChats={activeChatsUsers}
     />
   );
 }
