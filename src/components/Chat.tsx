@@ -1,4 +1,4 @@
-import { Flex, Text, Textarea, Button } from "@chakra-ui/react";
+import { Flex, Text, Textarea, Input, Button } from "@chakra-ui/react";
 import { List } from "./OnlineList";
 import { Avatar } from "./Avatar";
 import { SocketClientProps } from "../types/SocketClient";
@@ -27,7 +27,12 @@ export const Chat = ({
   const [msg, setMsg] = useState("");
 
   function sendMsg() {
-    if (msg.length > 0 && currentChat && currentChat.chat) {
+    if (
+      msg.length > 0 &&
+      currentChat &&
+      currentChat.chat &&
+      !msg.startsWith("\n")
+    ) {
       sendMsgToServer(currentChat?.socketId, msg);
       console.log("new msg sent:", msg);
       currentChat.chat.messages.unshift({
@@ -134,7 +139,8 @@ export const Chat = ({
                     );
                   })}
               </Flex>
-              <Textarea
+              <Input
+                h="70px"
                 backgroundColor="white"
                 colorScheme="purple"
                 focusBorderColor="purple"

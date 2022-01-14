@@ -83,8 +83,8 @@ export const List = ({
                   <Text color="gray.700">{i.name}</Text>
                   {i.chat.messages.length > 0 && (
                     <Text fontSize="sm" color="gray.400">
-                      {i.chat.messages[i.chat.messages.length - 1].name}:
-                      {i.chat.messages[i.chat.messages.length - 1].text}
+                      {i.chat.messages.length > 0 && i.chat.messages[0].name}:
+                      {i.chat.messages.length > 0 && i.chat.messages[0].text}
                     </Text>
                   )}
                 </Flex>

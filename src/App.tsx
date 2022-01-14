@@ -146,7 +146,7 @@ function App() {
     });
 
     connection.on("messageAllUsers", (data) => {
-      console.log(data);
+      //console.log(data);
       onReceiveMsg(general.socketId, data.senderName, data.message);
     });
   }, []);
