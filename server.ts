@@ -97,7 +97,7 @@ io.on("connection", async (socket) => {
     try {
       let objDate = new Date();
       chat.getOnlineUsers(socket).forEach((user) => {
-        chat.getSocket(user.socketId).emit("message", {
+        chat.getSocket(user.socketId).emit("messageAllUsers", {
           message: data.message,
           name: chat.getUserName(socket.id),
           date: `${objDate.getDate()}-${
