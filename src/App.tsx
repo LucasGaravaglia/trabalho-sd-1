@@ -33,6 +33,7 @@ const general = {
 
 function App() {
   const [connection] = useState(socketConnection);
+  const [soundNotification] = useState(new Audio("./assets/notification.wav"));
   const [name, setName] = useState("");
   const [myColor] = useState(
     "#" +
@@ -58,6 +59,10 @@ function App() {
         message: msg,
       });
     }
+  }
+
+  function playAudio() {
+    new Audio(require("./assets/notification.mp3")).play();
   }
 
   function register() {
@@ -101,7 +106,7 @@ function App() {
   const onReceiveMsg = useCallback(
     (senderSocketId: string, senderName: string, receivedMsg: string) => {
       // console.log(clients);
-
+      playAudio();
       const current = clients.find((c) => c.socketId === senderSocketId);
 
       if (typeof current !== "undefined") {
