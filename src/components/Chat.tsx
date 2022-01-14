@@ -31,7 +31,8 @@ export const Chat = ({
       msg.length > 0 &&
       currentChat &&
       currentChat.chat &&
-      !msg.startsWith("\n")
+      !msg.startsWith("\n") &&
+      !msg.startsWith("")
     ) {
       sendMsgToServer(currentChat?.socketId, msg);
       console.log("new msg sent:", msg);
