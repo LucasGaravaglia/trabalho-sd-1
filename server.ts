@@ -99,7 +99,7 @@ io.on("connection", async (socket) => {
       chat.getOnlineUsers(socket).forEach((user) => {
         chat.getSocket(user.socketId).emit("messageAllUsers", {
           message: data.message,
-          name: chat.getUserName(socket.id),
+          senderName: chat.getUserName(socket.id),
           date: `${objDate.getDate()}-${
             objDate.getMonth() + 1
           }-${objDate.getFullYear()}`,
