@@ -96,7 +96,7 @@ io.on("connection", async (socket) => {
   socket.on("sendMessageToAllUsers", (data) => {
     try {
       let objDate = new Date();
-      chat.getOnlineUsers().forEach((user) => {
+      chat.getOnlineUsers(socket).forEach((user) => {
         chat.getSocket(user.socketId).emit("message", {
           message: data.message,
           name: chat.getUserName(socket.id),
