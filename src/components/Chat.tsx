@@ -3,7 +3,7 @@ import { List } from "./OnlineList";
 import { Avatar } from "./Avatar";
 import { SocketClientProps } from "../types/SocketClient";
 import { ChatProps } from "../App";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 
 export type ChatComponentProps = {
   onlineClients: Array<SocketClientProps>;
@@ -30,7 +30,7 @@ export const Chat = ({
     if (msg.length > 0 && currentChat && currentChat.chat) {
       sendMsgToServer(currentChat?.socketId, msg);
       console.log("new msg sent:", msg);
-      currentChat.chat.messages.push({
+      currentChat.chat.messages.unshift({
         name: name,
         text: msg,
         time: Date.now(),
@@ -77,7 +77,7 @@ export const Chat = ({
                 <Text>{currentChat.online ? "Online" : "offline"}</Text>
               </Flex>
               <Flex
-                flexDirection="column"
+                flexDirection="column-reverse"
                 overflowY="scroll"
                 css={{
                   "&::-webkit-scrollbar": {
@@ -163,7 +163,6 @@ export const Chat = ({
             </>
           )}
         </Flex>
-
         <List
           contacts={onlineClients}
           picSize="30px"

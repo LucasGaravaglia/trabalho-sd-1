@@ -7,7 +7,8 @@ import { Login } from "./components/Login";
 import { Chat } from "./components/Chat";
 import { SocketClientProps } from "./types/SocketClient";
 
-const ENDPOINT = "http://localhost:3333";
+// const ENDPOINT = "http://localhost:3333";
+const ENDPOINT = "https://trabalho-sd-1.herokuapp.com/";
 const socketConnection = Socket(ENDPOINT);
 
 export type ChatProps = {
@@ -17,6 +18,16 @@ export type ChatProps = {
     name: string;
     msgId: string;
   }[];
+};
+
+const general = {
+  name: "Geral",
+  socketId: "geral",
+  color: "#805ad5",
+  online: true,
+  chat: {
+    messages: [],
+  },
 };
 
 function App() {
@@ -29,17 +40,23 @@ function App() {
       ).toString(16)
   );
   const [onlineClients, setOnlineClients] = useState<SocketClientProps[]>([]);
-  const [clients] = useState<SocketClientProps[]>([]);
+  const [clients] = useState<SocketClientProps[]>([general]);
 
   const [currentChat, setCurrentChat] = useState<SocketClientProps>();
-  const [activeChatsUsers] = useState<SocketClientProps[]>([]);
+  const [activeChatsUsers] = useState<SocketClientProps[]>([general]);
   const inputValue = useRef<HTMLInputElement>(null);
 
   function sendMsg(socketId: string, msg: string) {
-    connection?.emit("message", {
-      receiverId: socketId,
-      message: msg,
-    });
+    if (socketId === general.socketId) {
+      connection?.emit("sendMessageToAllUsers", {
+        message: msg,
+      });
+    } else {
+      connection?.emit("message", {
+        receiverId: socketId,
+        message: msg,
+      });
+    }
   }
 
   function register() {
@@ -79,7 +96,7 @@ function App() {
       const current = clients.find((c) => c.socketId === senderSocketId);
 
       if (typeof current !== "undefined") {
-        current.chat?.messages.push({
+        current.chat?.messages.unshift({
           name: senderName,
           text: receivedMsg,
           time: Date.now(),
@@ -108,6 +125,11 @@ function App() {
 
     connection.on("message", (data) => {
       onReceiveMsg(data.senderSocketId, data.senderName, data.message);
+    });
+
+    connection.on("messageAllUsers", (data) => {
+      console.log(data);
+      onReceiveMsg(general.socketId, data.senderName, data.message);
     });
   }, []);
 
