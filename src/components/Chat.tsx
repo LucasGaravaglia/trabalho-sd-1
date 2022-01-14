@@ -119,7 +119,7 @@ export const Chat = ({
                         maxWidth="50vw"
                         marginBottom="20px"
                       >
-                        <Avatar color={currentChat.color} />
+                        <Avatar color={i.color || currentChat.color} />
                         <Flex maxWidth="80%" flexDirection="column">
                           <Text>{i.name}</Text>
 

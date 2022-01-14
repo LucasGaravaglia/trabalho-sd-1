@@ -17,6 +17,7 @@ export type ChatProps = {
     time: number;
     name: string;
     msgId: string;
+    color?: string;
   }[];
 };
 
@@ -63,7 +64,12 @@ function App() {
     toast.loading("Verficando nome...", {
       duration: 1000,
     });
-    if (inputValue.current && inputValue.current.value.length > 3)
+    if (
+      inputValue.current &&
+      inputValue.current.value.length > 3 &&
+      inputValue.current.value !== "Geral" &&
+      inputValue.current.value !== "geral"
+    ) {
       connection?.emit(
         "register",
         {
@@ -77,6 +83,9 @@ function App() {
           }
         }
       );
+    } else {
+      toast.error("Nome inválido!!");
+    }
   }
 
   function selectChat(socketId: string) {
@@ -101,6 +110,10 @@ function App() {
           text: receivedMsg,
           time: Date.now(),
           msgId: (current.chat.messages.length + 1).toString(),
+          color:
+            senderSocketId === general.socketId
+              ? clients.find((x) => x.name === senderName)?.color
+              : current.color,
         });
         const isActive = activeChatsUsers.find(
           (i) => i.socketId === current?.socketId
