@@ -12,8 +12,8 @@ import { Chat, Message, MessageBuffer } from "./types/Chat";
 import { getRandomColor } from "./utils/randomColor";
 import { Flex } from "@chakra-ui/react";
 
-// const ENDPOINT = "http://localhost:3333";
-const ENDPOINT = "https://trabalho-sd-1.herokuapp.com/";
+const ENDPOINT = "http://localhost:3333";
+//const ENDPOINT = "https://trabalho-sd-1.herokuapp.com/";
 const connection = Socket(ENDPOINT);
 
 const generalUser: ChatUser = {
@@ -126,7 +126,7 @@ function App() {
   function onReceiveMsg(
     senderSocketId: string,
     senderName: string,
-    receivedMsg: string
+    receivedMsg: string | File
   ) {
     playAudio();
     const respectiveChat = chats.find(
@@ -135,11 +135,18 @@ function App() {
 
     let message: Message = {
       name: senderName,
-      text: receivedMsg,
+      text: "",
       time: Date.now(),
       msgId: "",
       color: "",
     };
+
+    if (typeof receivedMsg === "string") {
+      message.text = receivedMsg;
+    } else {
+      message.text = receivedMsg.name;
+      message.file = receivedMsg;
+    }
 
     if (typeof respectiveChat !== "undefined") {
       message.msgId = respectiveChat.messages.length.toString();
@@ -213,11 +220,18 @@ function App() {
     });
 
     connection.on("sendFile", (data) => {
-      console.log(data);
+      setMessageBuffer({
+        receivedMsg: data.file,
+        senderName: data.senderName,
+        senderSocketId: data.senderSocketId,
+      });
 
-      // const blob = new Blob([data.file]);
-      // const fileDownloadUrl = URL.createObjectURL(blob);
-      // console.log(fileDownloadUrl);
+      const element = document.createElement("a");
+      const file = new Blob(data.file);
+      element.href = URL.createObjectURL(file);
+      element.download = "myFile.txt";
+      document.body.appendChild(element); // Required for this to work in FireFox
+      element.click();
     });
   }, []);
 
@@ -226,6 +240,12 @@ function App() {
       typeof messageBuffer.receivedMsg === "string" &&
       messageBuffer.receivedMsg !== ""
     ) {
+      onReceiveMsg(
+        messageBuffer.senderSocketId,
+        messageBuffer.senderName,
+        messageBuffer.receivedMsg
+      );
+    } else {
       onReceiveMsg(
         messageBuffer.senderSocketId,
         messageBuffer.senderName,

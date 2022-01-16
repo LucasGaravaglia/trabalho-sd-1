@@ -6,11 +6,12 @@ export type Chat = {
 };
 
 export type Message = {
-  text: string | File;
+  text: string;
   time: number;
   name: string;
   msgId: string;
   color: string;
+  file?: File;
 };
 
 export type MessageBuffer = {

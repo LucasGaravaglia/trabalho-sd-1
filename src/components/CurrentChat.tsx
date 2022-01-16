@@ -4,7 +4,8 @@ import { Avatar } from "./Avatar";
 import { Chat } from "../types/Chat";
 
 import { useRef, useState } from "react";
-import { FaPaperclip } from "react-icons/fa";
+import { AiFillCloseCircle, AiFillFileAdd } from "react-icons/ai";
+import { BsFillFileEarmarkArrowDownFill } from "react-icons/bs";
 
 export type CurrentChatProps = {
   userName: string;
@@ -40,13 +41,16 @@ export const CurrentChat = ({
       }
     } else {
       sendMsgToServer(currentChat?.user.socketId, msg);
+      console.log(msg);
       currentChat.messages.unshift({
         color: userColor,
         msgId: currentChat.messages.length.toString(),
         name: userName,
-        text: msg,
+        text: msg.name,
         time: Date.now(),
+        file: msg,
       });
+      setMsg("");
     }
   }
 
@@ -98,9 +102,19 @@ export const CurrentChat = ({
                         alignItems="flex-end"
                       >
                         <Text>{i.name}</Text>
-
-                        <Flex padding="10px" bg="#e9eaf6">
-                          <Text>{i.text}</Text>
+                        <Flex alignItems="center">
+                          {i.file && (
+                            <Box
+                              marginX="5px"
+                              cursor="pointer"
+                              _hover={{ opacity: "0.6" }}
+                            >
+                              <BsFillFileEarmarkArrowDownFill size={30} />
+                            </Box>
+                          )}
+                          <Flex padding="10px" bg="#e9eaf6">
+                            <Text>{i.text}</Text>
+                          </Flex>
                         </Flex>
                         <Text fontSize="10px">
                           {new Date(i.time).toLocaleTimeString()}
@@ -117,8 +131,19 @@ export const CurrentChat = ({
                       <Flex maxWidth="80%" flexDirection="column">
                         <Text>{i.name}</Text>
 
-                        <Flex padding="10px" bg="white">
-                          <Text>{i.text}</Text>
+                        <Flex flexDirection="row-reverse" alignItems="center">
+                          {i.file && (
+                            <Box
+                              marginX="5px"
+                              cursor="pointer"
+                              _hover={{ opacity: "0.6" }}
+                            >
+                              <BsFillFileEarmarkArrowDownFill size={30} />
+                            </Box>
+                          )}
+                          <Flex padding="10px" bg="white">
+                            <Text>{i.text}</Text>
+                          </Flex>
                         </Flex>
                         <Text fontSize="10px">
                           {new Date(i.time).toLocaleTimeString()}
@@ -143,6 +168,25 @@ export const CurrentChat = ({
                   return false;
                 }}
               />
+            )}
+            {typeof msg !== "string" && (
+              <Flex
+                borderRadius="5px"
+                padding="10px"
+                w="100"
+                border="1px solid gray"
+                flexDirection="row-reverse"
+                justifyContent="space-between"
+              >
+                <Text>{msg.name}</Text>
+                <Box
+                  onClick={() => setMsg("")}
+                  cursor="pointer"
+                  _hover={{ opacity: "0.6" }}
+                >
+                  <AiFillCloseCircle color="gray" size={20} />
+                </Box>
+              </Flex>
             )}
             <Flex
               padding="5px"
@@ -172,7 +216,7 @@ export const CurrentChat = ({
                   cursor="pointer"
                   _hover={{ opacity: "0.6" }}
                 >
-                  <FaPaperclip color="gray" size={30} />
+                  <AiFillFileAdd color="gray" size={30} />
                 </Box>
                 <Button
                   marginLeft="10px"
