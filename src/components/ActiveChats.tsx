@@ -1,21 +1,21 @@
 import { Flex, Heading, Text } from "@chakra-ui/react";
-import { ChatUser } from "../types/ChatUser";
+import { Chat } from "../types/Chat";
 import { Avatar } from "./Avatar";
 
-export type OnlineListProps = {
+export type ListProps = {
   spacing?: string;
-  users?: Array<ChatUser>;
+  chats?: Array<Chat>;
   picSize?: string;
   title?: string;
   onClickItem: (socketId: string) => void;
 };
-export const OnlineList = ({
+export const ActiveChats = ({
   spacing = "15px",
   picSize = "50px",
   title = "listTitle",
-  users,
   onClickItem,
-}: OnlineListProps) => {
+  chats,
+}: ListProps) => {
   return (
     <Flex
       padding="20px"
@@ -38,20 +38,26 @@ export const OnlineList = ({
       >
         {title}
       </Heading>
-      {users &&
-        users.map((i) => (
+      {chats &&
+        chats.map((i) => (
           <Flex
             cursor="pointer"
             _hover={{ opacity: "0.6" }}
-            key={i.socketId}
+            key={i.user.socketId}
             marginBottom={spacing}
             width="100%"
             alignItems="center"
-            onClick={() => onClickItem(i.socketId)}
+            onClick={() => onClickItem(i.user.socketId)}
           >
-            <Avatar color={i.color || "back"} picSize={picSize} />
+            <Avatar color={i.user.color || "back"} picSize={picSize} />
             <Flex flexDirection="column">
-              <Text color="gray.700">{i.name}</Text>
+              <Text color="gray.700">{i.user.name}</Text>
+              {i.messages.length > 0 && (
+                <Text fontSize="sm" color="gray.400">
+                  {i.messages.length > 0 && i.messages[0].name}:
+                  {i.messages.length > 0 && i.messages[0].text}
+                </Text>
+              )}
             </Flex>
           </Flex>
         ))}
