@@ -226,8 +226,8 @@ export const CurrentChat = ({
                 onChange={(e) => {
                   console.log("File selected");
                   if (e.target.files !== null) {
-                    console.log(e.target.files[0]);
                     setMsg(e.target.files[0]);
+                    e.target.value = "";
                   }
                 }}
                 ref={inputRef}

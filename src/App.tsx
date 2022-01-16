@@ -161,15 +161,23 @@ function App() {
       console.log("FIle arrived");
     }
 
+    let color = "";
+
+    if (senderSocketId === generalUser.socketId) {
+      const respectiveUser = users.find((u) => u.name === senderName);
+      if (!!respectiveUser) {
+        color = respectiveUser.color;
+      }
+    }
+
     if (typeof respectiveChat !== "undefined") {
       message.msgId = respectiveChat.messages.length.toString();
-      message.color = respectiveChat.user.color;
+      message.color = color === "" ? respectiveChat.user.color : color;
       respectiveChat.messages.unshift(message);
-      console.log(respectiveChat);
     } else {
       const user = users.find((u) => u.socketId === senderSocketId);
       if (!!user) {
-        message.color = user.color;
+        message.color = color === "" ? user.color : color;
         message.msgId = "0";
         chats.push({
           messages: [message],
