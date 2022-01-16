@@ -48,7 +48,11 @@ export const CurrentChat = ({
         name: userName,
         text: msg.name,
         time: Date.now(),
-        file: msg,
+        file: {
+          fileContent: msg,
+          fileName: msg.name,
+          fileType: msg.type,
+        },
       });
       setMsg("");
     }
@@ -72,7 +76,6 @@ export const CurrentChat = ({
                 <Avatar picSize="30px" color={currentChat?.user.color} />
                 <Text>{currentChat?.user.name}</Text>
               </Flex>
-              <Text>{currentChat.user.online ? "Online" : "offline"}</Text>
             </Flex>
             <Flex
               flexDirection="column-reverse"
@@ -108,6 +111,16 @@ export const CurrentChat = ({
                               marginX="5px"
                               cursor="pointer"
                               _hover={{ opacity: "0.6" }}
+                              onClick={() => {
+                                const element = document.createElement("a");
+                                const file = new Blob([i.file!.fileContent], {
+                                  type: i.file!.fileType,
+                                });
+                                element.href = URL.createObjectURL(file);
+                                element.download = i.file!.fileName;
+                                document.body.appendChild(element);
+                                element.click();
+                              }}
                             >
                               <BsFillFileEarmarkArrowDownFill size={30} />
                             </Box>
@@ -132,11 +145,21 @@ export const CurrentChat = ({
                         <Text>{i.name}</Text>
 
                         <Flex flexDirection="row-reverse" alignItems="center">
-                          {i.file && (
+                          {i.file?.fileName && (
                             <Box
                               marginX="5px"
                               cursor="pointer"
                               _hover={{ opacity: "0.6" }}
+                              onClick={() => {
+                                const element = document.createElement("a");
+                                const file = new Blob([i.file!.fileContent], {
+                                  type: i.file!.fileType,
+                                });
+                                element.href = URL.createObjectURL(file);
+                                element.download = i.file!.fileName;
+                                document.body.appendChild(element);
+                                element.click();
+                              }}
                             >
                               <BsFillFileEarmarkArrowDownFill size={30} />
                             </Box>
@@ -203,6 +226,7 @@ export const CurrentChat = ({
                 onChange={(e) => {
                   console.log("File selected");
                   if (e.target.files !== null) {
+                    console.log(e.target.files[0]);
                     setMsg(e.target.files[0]);
                   }
                 }}

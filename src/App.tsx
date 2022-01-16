@@ -8,7 +8,7 @@ import { ChatUser } from "./types/ChatUser";
 import { CurrentChat } from "./components/CurrentChat";
 import { ActiveChats } from "./components/ActiveChats";
 import { OnlineList } from "./components/OnlineList";
-import { Chat, Message, MessageBuffer } from "./types/Chat";
+import { Chat, ChatFile, Message, MessageBuffer } from "./types/Chat";
 import { getRandomColor } from "./utils/randomColor";
 import { Flex } from "@chakra-ui/react";
 
@@ -60,10 +60,20 @@ function App() {
       }
     } else {
       if (msg !== null) {
-        connection.emit("sendFile", {
-          receiverId: socketId,
-          file: msg,
-        });
+        if (socketId === generalUser.socketId) {
+          connection.emit("sendFileToAllUsers", {
+            file: msg,
+            fileName: msg.name,
+            fileType: msg.type,
+          });
+        } else {
+          connection.emit("sendFile", {
+            receiverId: socketId,
+            file: msg,
+            fileName: msg.name,
+            fileType: msg.type,
+          });
+        }
       }
     }
   }
@@ -126,7 +136,7 @@ function App() {
   function onReceiveMsg(
     senderSocketId: string,
     senderName: string,
-    receivedMsg: string | File
+    receivedMsg: string | ChatFile
   ) {
     playAudio();
     const respectiveChat = chats.find(
@@ -143,15 +153,19 @@ function App() {
 
     if (typeof receivedMsg === "string") {
       message.text = receivedMsg;
+      console.log("String arrived");
+      console.log(receivedMsg);
     } else {
-      message.text = receivedMsg.name;
+      message.text = receivedMsg.fileName;
       message.file = receivedMsg;
+      console.log("FIle arrived");
     }
 
     if (typeof respectiveChat !== "undefined") {
       message.msgId = respectiveChat.messages.length.toString();
       message.color = respectiveChat.user.color;
       respectiveChat.messages.unshift(message);
+      console.log(respectiveChat);
     } else {
       const user = users.find((u) => u.socketId === senderSocketId);
       if (!!user) {
@@ -219,38 +233,50 @@ function App() {
       });
     });
 
-    connection.on("sendFile", (data) => {
-      setMessageBuffer({
-        receivedMsg: data.file,
+    connection.on("file", (data) => {
+      const newBuffer: MessageBuffer = {
+        file: {
+          fileName: data.fileName,
+          fileType: data.fileType,
+          fileContent: data.file,
+        },
+        receivedMsg: data.fileName,
         senderName: data.senderName,
         senderSocketId: data.senderSocketId,
-      });
+      };
+      setMessageBuffer(newBuffer);
+    });
 
-      const element = document.createElement("a");
-      const file = new Blob(data.file);
-      element.href = URL.createObjectURL(file);
-      element.download = "myFile.txt";
-      document.body.appendChild(element); // Required for this to work in FireFox
-      element.click();
+    connection.on("fileFromGeneral", (data) => {
+      const newBuffer: MessageBuffer = {
+        file: {
+          fileName: data.fileName,
+          fileType: data.fileType,
+          fileContent: data.file,
+        },
+        receivedMsg: data.fileName,
+        senderName: data.senderName,
+        senderSocketId: generalUser.socketId,
+      };
+      setMessageBuffer(newBuffer);
     });
   }, []);
 
   useEffect(() => {
-    if (
-      typeof messageBuffer.receivedMsg === "string" &&
-      messageBuffer.receivedMsg !== ""
-    ) {
+    if (!messageBuffer.file && typeof messageBuffer.receivedMsg === "string") {
       onReceiveMsg(
         messageBuffer.senderSocketId,
         messageBuffer.senderName,
         messageBuffer.receivedMsg
       );
     } else {
-      onReceiveMsg(
-        messageBuffer.senderSocketId,
-        messageBuffer.senderName,
-        messageBuffer.receivedMsg
-      );
+      if (!!messageBuffer.file) {
+        onReceiveMsg(
+          messageBuffer.senderSocketId,
+          messageBuffer.senderName,
+          messageBuffer.file
+        );
+      }
     }
   }, [messageBuffer]);
 

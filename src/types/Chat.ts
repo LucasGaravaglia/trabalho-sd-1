@@ -11,11 +11,18 @@ export type Message = {
   name: string;
   msgId: string;
   color: string;
-  file?: File;
+  file?: ChatFile;
 };
 
 export type MessageBuffer = {
   senderSocketId: string;
   receivedMsg: string | File;
   senderName: string;
+  file?: ChatFile;
+};
+
+export type ChatFile = {
+  fileName: string;
+  fileType: string;
+  fileContent: File;
 };
