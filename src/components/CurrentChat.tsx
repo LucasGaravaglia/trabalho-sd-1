@@ -144,7 +144,11 @@ export const CurrentChat = ({
                       <Flex maxWidth="80%" flexDirection="column">
                         <Text>{i.name}</Text>
 
-                        <Flex flexDirection="row-reverse" alignItems="center">
+                        <Flex
+                          flexDirection={i.file ? "row-reverse" : "row"}
+                          justifyContent="flex-start"
+                          alignItems="center"
+                        >
                           {i.file?.fileName && (
                             <Box
                               marginX="5px"
