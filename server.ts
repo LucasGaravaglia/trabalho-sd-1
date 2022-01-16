@@ -81,6 +81,7 @@ io.on("connection", async (socket) => {
       chat.getSocket(data.receiverId).emit("sendFile", {
         file: data.file,
         senderName: chat.getUserName(socket.id),
+        senderSocketId: socket.id,
         date: `${objDate.getDate()}-${
           objDate.getMonth() + 1
         }-${objDate.getFullYear()}`,
