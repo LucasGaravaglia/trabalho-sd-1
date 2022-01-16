@@ -78,8 +78,10 @@ io.on("connection", async (socket) => {
   socket.on("sendFile", (data) => {
     try {
       let objDate = new Date();
-      chat.getSocket(data.receiverId).emit("sendFile", {
+      chat.getSocket(data.receiverId).emit("file", {
         file: data.file,
+        fileName: data.fileName,
+        fileType: data.fileType,
         senderName: chat.getUserName(socket.id),
         senderSocketId: socket.id,
         date: `${objDate.getDate()}-${
@@ -91,6 +93,28 @@ io.on("connection", async (socket) => {
       console.log(`New file sent: ${data.message}`);
     } catch (err) {
       console.log(`Error(sendFile): ${err.message}`);
+    }
+  });
+
+  socket.on("sendFileToAllUsers", (data) => {
+    try {
+      let objDate = new Date();
+      chat.getOnlineUsers(socket).forEach((user) => {
+        chat.getSocket(user.socketId).emit("fileFromGeneral", {
+          file: data.file,
+          fileName: data.fileName,
+          fileType: data.fileType,
+          senderName: chat.getUserName(socket.id),
+          senderSocketId: socket.id,
+          date: `${objDate.getDate()}-${
+            objDate.getMonth() + 1
+          }-${objDate.getFullYear()}`,
+          time: `${objDate.getHours()}-${objDate.getMinutes()}-${objDate.getSeconds()}`,
+          timeZone: objDate.getTimezoneOffset(),
+        });
+      });
+    } catch (err) {
+      console.log(`Error(sendFileToAllUsers): ${err.message}`);
     }
   });
 
